@@ -1,4 +1,4 @@
-# A Parallelized Objective Function of Delivery Logistic Problem <!-- omit in toc -->
+# A Parallelized Objective Function for Delivery Logistic Problem <!-- omit in toc -->
 
 ---
 ## Table of Contents <!-- omit in toc -->
@@ -39,12 +39,32 @@ We propose to find the optimal centroids which form well-defined, time-balanced 
 ### Objective Function
 For this optimization problem, we propose an objective function that assigns every point in $Q$ to its closer centroid $C$ based on haversine metric and return the standard deviation of the deliver times of the formed clusters.  
 
-Each solution is a list of centroids of size $(k,D)$ where $k$ is the number of clusters to form and $D$ are the dimensions or features of each point, which to be flattened generates a solution of size $kD$. This representation is the expected input of the objective function, which algorithm is the next:
+Each solution is a list of centroids of size $(k,D)$ where $k$ is the number of clusters to form and $D$ are the dimensions or features of each point, which to be flattened generates a individual of size $kD$. This representation is the expected input of the objective function, which general algorithmic flow with distributed processing is the next:
 
 ```mermaid
+flowchart TD
+    InitFunction[Parameters to initialize the objective function: Points _Q_, Max time _t_max_, Num Clusters _k_, Iterations _t_]
+    Start(Input: Individual)
+    AssignDistribution@{ shape: processes, label: "Distribute centroids assignation over nodes" }
+    Assign[Assign points to their closer centroid]
+    EvalClusterDistribution@{ shape: processes, label: "Distribute clusters evaluation over nodes" }
+    EvalClusters[Calculate deliver times in every formed cluster]
+    CalcFitness[Calculate the standard deviation of the deliver times in each cluster]
+    End(Output: Std of time delivers)
+    
+    InitFunction .-> Start
+    Start --> AssignDistribution
+    AssignDistribution --> Assign
+    Assign --> EvalClusterDistribution
+    EvalClusterDistribution --> EvalClusters
+    EvalClusters --> CalcFitness
+    CalcFitness --> End
 ```
 
 ### Technologies and Tools
+- C/C++
+- Intel MPI
+- Python
 
 ### Experimental Design
 
@@ -65,6 +85,7 @@ Project developed for the subjects "High-Performance Computing (HPC)" and "Evolu
 
 ---
 ## License
+Project licensed under GNU GPL v3.0.
 
 ---
 ## References
