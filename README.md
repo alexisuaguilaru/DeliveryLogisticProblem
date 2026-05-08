@@ -50,7 +50,7 @@ flowchart TD
     EvalClusterDistribution@{ shape: processes, label: "Distribute clusters evaluation over nodes" }
     EvalClusters[Calculate deliver times in every formed cluster]
     CalcFitness[Calculate the standard deviation of the deliver times in each cluster]
-    End(Output: Std of time delivers)
+    End(Output: Std of deliver times)
     
     InitFunction .-> Start
     Start --> AssignDistribution
