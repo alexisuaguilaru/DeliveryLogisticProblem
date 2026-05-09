@@ -1,0 +1,1 @@
+from .Entrypoint import MainProgram
