@@ -2,39 +2,61 @@ import argparse
 from pathlib import Path
 
 MainArgParser = argparse.ArgumentParser(
-    prog = 'Logistic Delivery Optimizer',
+    prog = 'LogisticDelivery',
+    description = 'A simple entrypoint for the objective function in Logistic Delivery write with Python.'
 )
 
 MainArgParser.add_argument(
-    '-if', '--input-file',
+    '-if', '--input-dataset',
     required = True,
-    help = 'Path to the CSV file with the coordinates and loads of every point.',
+    help = 'Path to the CSV file with the coordinates, loads and identifier of every point.',
     type = Path,
 )
 
 MainArgParser.add_argument(
-    '-lon','--longitude',
-    default = 'lon',
-    help = 'Dataset feature related to point longitude',
+    '-id', '--identifier',
+    default = 'id',
+    help = 'Dataset feature related to point identifier.',
     type = str,
 )
 
 MainArgParser.add_argument(
-    '-lat','--latitude',
-    default = 'lat',
-    help = 'Dataset feature related to point latitude',
-    type = str,
-)
-
-MainArgParser.add_argument(
-    '-l','--load',
+    '-l', '--load',
     default = 'load',
-    help = 'Dataset feature related to point load',
+    help = 'Dataset feature related to point load.',
     type = str,
 )
 
 MainArgParser.add_argument(
-    '-op','--output-path',
+    '-s', '--solution',
+    required = True,
+    help = 'Path to the CSV file with the values of a solution.',
+    type = str,
+)
+
+MainArgParser.add_argument(
+    '-k', '--num-clusters',
+    default = 10,
+    help = 'Number of clusters to form.',
+    type = int,
+)
+
+MainArgParser.add_argument(
+    '-d','-distance',
+    default = 'haversine',
+    help = 'Distance function name to calculate distances between centroids and points',
+    type = str, 
+)
+
+MainArgParser.add_argument(
+    '-oc','--order-column',
+    required = True,
+    help = 'Column on which the dataset is ordered.',
+    type = str,   
+)
+
+MainArgParser.add_argument(
+    '-op', '--output-path',
     default = 'output_files',
     required = True,
     help = 'Path of the folder for output or results.',
@@ -42,23 +64,8 @@ MainArgParser.add_argument(
 )
 
 MainArgParser.add_argument(
-    '-nd','--name-dataset',
+    '-nd', '--name-dataset',
     required = True,
     help = 'Dataset name or identifier.',
     type = str,
-)
-
-MainArgParser.add_argument(
-    '-ml','--max-load',
-    default = 12*3600,
-    required = True,
-    help = 'Maximum time to complete a route per cluster.',
-    type = int,
-)
-
-MainArgParser.add_argument(
-    '-s','--seed',
-    default = 1234,
-    help = 'Execution/Program random seed.',
-    type = int,
 )
