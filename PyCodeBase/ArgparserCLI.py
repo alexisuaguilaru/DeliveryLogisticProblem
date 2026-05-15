@@ -21,6 +21,20 @@ MainArgParser.add_argument(
 )
 
 MainArgParser.add_argument(
+    '--longitude',
+    default = 'lon',
+    help = 'Dataset feature related to point longitude',
+    type = str,
+)
+
+MainArgParser.add_argument(
+    '--latitude',
+    default = 'lat',
+    help = 'Dataset feature related to point latitude',
+    type = str,
+)
+
+MainArgParser.add_argument(
     '-l', '--load',
     default = 'load',
     help = 'Dataset feature related to point load.',

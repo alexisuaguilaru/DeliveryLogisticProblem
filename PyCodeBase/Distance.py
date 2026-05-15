@@ -8,10 +8,10 @@ def CalculateTransferTime(
         Velocity: float,
     ) -> float:
 
-    Distance = HaversineDistance(StartPoint,EndPoint)
+    Distance = _HaversineDistance(StartPoint,EndPoint)
     return 3600*Distance/Velocity
 
-def HaversineDistance(
+def _HaversineDistance(
         StartPoint: tuple[float,float],
         EndPoint: tuple[float,float],
     ) -> float:

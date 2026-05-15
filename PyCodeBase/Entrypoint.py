@@ -1,16 +1,37 @@
 from .ArgparserCLI import MainArgParser
 from .LoadData import GetDatasetPartitions , WriteDatasetPartitions
+from .CloserCentroid import AssignCloserCentroidToPoints
 
 def MainProgram():
     ProgramArgs = MainArgParser.parse_args()
     DATASET_PATH = ProgramArgs.input_dataset
+    SOLUTION_PATH = ProgramArgs.solution
+    NUM_WORKERS= ProgramArgs.workers
+    SOLUTION_PATH = ProgramArgs.solution
+    IDENTIFIER_COLUMN = ProgramArgs.identifier
+    LONGITUDE_COLUMN = ProgramArgs.longitude
+    LATITUDE_COLUMN = ProgramArgs.latitude
+    LOAD_COLUMN = ProgramArgs.load
+    NUM_CLUSTERS = ProgramArgs.num_clusters
+    ORDER_COLUMN = ProgramArgs.order_column
 
     DatasetPartitions = GetDatasetPartitions(
         DATASET_PATH,
-        ProgramArgs.workers
+        NUM_WORKERS,
     )
 
-    ListPathPartitions = WriteDatasetPartitions(
+    ListPartitionsPath = WriteDatasetPartitions(
         DATASET_PATH,
-        DatasetPartitions
+        DatasetPartitions,
     )
+
+    ClusterPartition = []
+    for partition_path in ListPartitionsPath:
+        centroids_assignation = AssignCloserCentroidToPoints(
+            partition_path,
+            SOLUTION_PATH,
+            LONGITUDE_COLUMN,
+            LATITUDE_COLUMN,
+            NUM_CLUSTERS
+        )
+        ClusterPartition += centroids_assignation

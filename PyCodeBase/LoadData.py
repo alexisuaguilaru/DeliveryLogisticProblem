@@ -20,22 +20,22 @@ def WriteDatasetPartitions(
         PartitionsSize: list[int]
     ) -> list[Path]:
 
-    ListPathPartitions = []
+    ListPartitionsPath = []
 
     with open(DatasetPath) as DatasetFile:
         HeaderLine = DatasetFile.readline()
 
         for partition_id , num_points in enumerate(PartitionsSize,1):
             partition_name = DatasetPath.stem+f'_{partition_id}'+DatasetPath.suffix
-            ListPathPartitions.append(DatasetPath.parent/partition_name)
+            ListPartitionsPath.append(DatasetPath.parent/partition_name)
 
-            with open(ListPathPartitions[-1],'w') as dataset_partition:
+            with open(ListPartitionsPath[-1],'w') as dataset_partition:
                 dataset_partition.write(HeaderLine)
                 
                 for _ , row_data in zip(range(num_points),DatasetFile):
                     dataset_partition.write(row_data)
 
-    return ListPathPartitions
+    return ListPartitionsPath
 
 def _CountRows(
         DatasetPath: Path,
