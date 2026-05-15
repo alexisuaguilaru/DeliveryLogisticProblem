@@ -2,6 +2,7 @@ from .ArgparserCLI import MainArgParser
 from .LoadData import GetDatasetPartitions , WriteDatasetPartitions
 from .CloserCentroid import AssignCloserCentroidToPoints
 from .Cluster import GetClustersFromCentroidsAssignation , WriteClusters
+from .Cost import GetClusterCost , ObjectiveFunction
 
 def MainProgram():
     ProgramArgs = MainArgParser.parse_args()
@@ -14,7 +15,8 @@ def MainProgram():
     LATITUDE_COLUMN = ProgramArgs.latitude
     LOAD_COLUMN = ProgramArgs.load
     NUM_CLUSTERS = ProgramArgs.num_clusters
-    ORDER_COLUMN = ProgramArgs.order_column
+    MAX_LOAD = ProgramArgs.max_load
+    PENALIZATION = ProgramArgs.penalization
 
     DatasetPartitions = GetDatasetPartitions(
         DATASET_PATH,
@@ -46,3 +48,24 @@ def MainProgram():
         DATASET_PATH,
         Clusters,
     )
+
+    ClustersCosts = []
+    for cluster_path in ListClustersPath:
+        cluster_cost = GetClusterCost(
+            cluster_path,
+            LONGITUDE_COLUMN,
+            LATITUDE_COLUMN,
+            LOAD_COLUMN
+        )
+
+        ClustersCosts.append(cluster_cost)
+
+    NumPoints = sum(map(len,Clusters))
+    Fitness = ObjectiveFunction(
+        ClustersCosts,
+        MAX_LOAD,
+        NumPoints,
+        PENALIZATION,
+    )
+
+    print(Fitness)

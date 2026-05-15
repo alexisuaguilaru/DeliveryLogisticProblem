@@ -70,6 +70,22 @@ MainArgParser.add_argument(
 )
 
 MainArgParser.add_argument(
+    '-ml','--max-load',
+    default = 12*3600,
+    required = True,
+    help = 'Maximum time to complete a route per cluster.',
+    type = int,
+)
+
+MainArgParser.add_argument(
+    '-p','--penalization',
+    default = 1,
+    choices = [0,1],
+    help = 'Include penalization in the objective function.',
+    type = int,
+)
+
+MainArgParser.add_argument(
     '-op', '--output-path',
     default = 'output_files',
     required = True,
