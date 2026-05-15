@@ -5,7 +5,7 @@ def ReadDatasetPartition(
         PartitionPath: Path,
         LongitudeColumn: str,
         LatitudeColumn: str,
-    ):
+    ) -> list[tuple[float,float]]:
 
     with open(PartitionPath) as PartitionFile:
         IndexLongitude , IndexLatitude = _GetIndexSpatialFeatures(

@@ -14,13 +14,6 @@ MainArgParser.add_argument(
 )
 
 MainArgParser.add_argument(
-    '-id', '--identifier',
-    default = 'id',
-    help = 'Dataset feature related to point identifier.',
-    type = str,
-)
-
-MainArgParser.add_argument(
     '--longitude',
     default = 'lon',
     help = 'Dataset feature related to point longitude',
@@ -60,13 +53,6 @@ MainArgParser.add_argument(
     default = 'haversine',
     help = 'Distance function name to calculate distances between centroids and points',
     type = str, 
-)
-
-MainArgParser.add_argument(
-    '-oc','--order-column',
-    required = True,
-    help = 'Column on which the dataset is ordered.',
-    type = str,   
 )
 
 MainArgParser.add_argument(

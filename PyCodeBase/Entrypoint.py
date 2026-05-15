@@ -4,33 +4,33 @@ from .CloserCentroid import AssignCloserCentroidToPoints
 from .Cluster import GetClustersFromCentroidsAssignation , WriteClusters
 from .Cost import GetClusterCost , ObjectiveFunction
 
+from pathlib import Path
+
 def MainProgram():
     ProgramArgs = MainArgParser.parse_args()
-    DATASET_PATH = ProgramArgs.input_dataset
-    SOLUTION_PATH = ProgramArgs.solution
-    NUM_WORKERS= ProgramArgs.workers
-    SOLUTION_PATH = ProgramArgs.solution
-    IDENTIFIER_COLUMN = ProgramArgs.identifier
-    LONGITUDE_COLUMN = ProgramArgs.longitude
-    LATITUDE_COLUMN = ProgramArgs.latitude
-    LOAD_COLUMN = ProgramArgs.load
-    NUM_CLUSTERS = ProgramArgs.num_clusters
-    MAX_LOAD = ProgramArgs.max_load
-    PENALIZATION = ProgramArgs.penalization
+    DATASET_PATH: Path = ProgramArgs.input_dataset
+    SOLUTION_PATH: Path = ProgramArgs.solution
+    NUM_WORKERS: int = ProgramArgs.workers
+    LONGITUDE_COLUMN: str = ProgramArgs.longitude
+    LATITUDE_COLUMN: str = ProgramArgs.latitude
+    LOAD_COLUMN: str = ProgramArgs.load
+    NUM_CLUSTERS: int = ProgramArgs.num_clusters
+    MAX_LOAD: float = ProgramArgs.max_load
+    PENALIZATION: bool = ProgramArgs.penalization
 
-    DatasetPartitions = GetDatasetPartitions(
+    DatasetPartitions: list[int] = GetDatasetPartitions(
         DATASET_PATH,
         NUM_WORKERS,
     )
 
-    ListPartitionsPath = WriteDatasetPartitions(
+    ListPartitionsPath: list[Path] = WriteDatasetPartitions(
         DATASET_PATH,
         DatasetPartitions,
     )
 
-    ClusterPartition = []
+    ClusterPartition: list[int] = []
     for partition_path in ListPartitionsPath:
-        centroids_assignation = AssignCloserCentroidToPoints(
+        centroids_assignation: list[int] = AssignCloserCentroidToPoints(
             partition_path,
             SOLUTION_PATH,
             LONGITUDE_COLUMN,
@@ -39,19 +39,19 @@ def MainProgram():
         )
         ClusterPartition += centroids_assignation
 
-    Clusters = GetClustersFromCentroidsAssignation(
+    Clusters: list[list[int]] = GetClustersFromCentroidsAssignation(
         ClusterPartition,
         NUM_CLUSTERS,
     )
 
-    ListClustersPath = WriteClusters(
+    ListClustersPath: list[Path] = WriteClusters(
         DATASET_PATH,
         Clusters,
     )
 
-    ClustersCosts = []
+    ClustersCosts: list[float] = []
     for cluster_path in ListClustersPath:
-        cluster_cost = GetClusterCost(
+        cluster_cost: float = GetClusterCost(
             cluster_path,
             LONGITUDE_COLUMN,
             LATITUDE_COLUMN,
@@ -60,8 +60,8 @@ def MainProgram():
 
         ClustersCosts.append(cluster_cost)
 
-    NumPoints = sum(map(len,Clusters))
-    Fitness = ObjectiveFunction(
+    NumPoints: int = sum(map(len,Clusters))
+    Fitness: float = ObjectiveFunction(
         ClustersCosts,
         MAX_LOAD,
         NumPoints,
