@@ -69,3 +69,10 @@ MainArgParser.add_argument(
     help = 'Dataset name or identifier.',
     type = str,
 )
+
+MainArgParser.add_argument(
+    '-nj', '--workers',
+    required = True,
+    help = 'Number of compute nodes.',
+    type = int,
+)
