@@ -1,8 +1,11 @@
+from time import time
+
 from .ArgparserCLI import MainArgParser
 from .LoadData import GetDatasetPartitions , WriteDatasetPartitions
 from .CloserCentroid import AssignCloserCentroidToPoints
 from .Cluster import GetClustersFromCentroidsAssignation , WriteClusters
 from .Cost import GetClusterCost , ObjectiveFunction
+from .Results import DumpClustersResults , DumpInfoResults
 
 from pathlib import Path
 
@@ -17,7 +20,12 @@ def MainProgram():
     NUM_CLUSTERS: int = ProgramArgs.num_clusters
     MAX_LOAD: float = ProgramArgs.max_load
     PENALIZATION: bool = ProgramArgs.penalization
+    OUTPUT_PATH: Path = ProgramArgs.output_path
+    NAME_RESULTS: str = ProgramArgs.name_results
 
+    StartTime_Execution = time()
+
+    StartTime_DatasetPartitions = time()
     DatasetPartitions: list[int] = GetDatasetPartitions(
         DATASET_PATH,
         NUM_WORKERS,
@@ -27,7 +35,9 @@ def MainProgram():
         DATASET_PATH,
         DatasetPartitions,
     )
+    EndTime_DatasetPartitions = time()
 
+    StartTime_CentroidsAssignation = time()
     ClusterPartition: list[int] = []
     for partition_path in ListPartitionsPath:
         centroids_assignation: list[int] = AssignCloserCentroidToPoints(
@@ -38,7 +48,9 @@ def MainProgram():
             NUM_CLUSTERS,
         )
         ClusterPartition += centroids_assignation
+    EndTime_CentroidsAssignation = time()
 
+    StartTime_Clusters = time()
     Clusters: list[list[int]] = GetClustersFromCentroidsAssignation(
         ClusterPartition,
         NUM_CLUSTERS,
@@ -48,7 +60,9 @@ def MainProgram():
         DATASET_PATH,
         Clusters,
     )
+    EndTime_Clusters = time()
 
+    StartTime_CalculateCosts = time()
     ClustersCosts: list[float] = []
     for cluster_path in ListClustersPath:
         cluster_cost: float = GetClusterCost(
@@ -67,6 +81,24 @@ def MainProgram():
         NumPoints,
         PENALIZATION,
     )
+    EndTime_CalculateCosts = time()
 
-    print(ClustersCosts)
-    print(Fitness)
+    EndTime_Execution = time()
+
+    DumpClustersResults(
+        Clusters,
+        ClustersCosts,
+        OUTPUT_PATH,
+        NAME_RESULTS,
+    )
+
+    DumpInfoResults(
+        Fitness,
+        EndTime_Execution-StartTime_Execution,
+        EndTime_DatasetPartitions-StartTime_DatasetPartitions,
+        EndTime_CentroidsAssignation-StartTime_CentroidsAssignation,
+        EndTime_Clusters-StartTime_Clusters,
+        EndTime_CalculateCosts-StartTime_CalculateCosts,
+        OUTPUT_PATH,
+        NAME_RESULTS,
+    )

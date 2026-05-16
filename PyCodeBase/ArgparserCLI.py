@@ -80,9 +80,9 @@ MainArgParser.add_argument(
 )
 
 MainArgParser.add_argument(
-    '-nd', '--name-dataset',
+    '-nr', '--name-results',
     required = True,
-    help = 'Dataset name or identifier.',
+    help = 'Results name or identifier.',
     type = str,
 )
 
