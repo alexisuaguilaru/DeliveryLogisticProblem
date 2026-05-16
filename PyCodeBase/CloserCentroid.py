@@ -1,7 +1,7 @@
 from pathlib import Path
 from csv import reader
 
-from .Distance import CalculateTransferTime
+from .Distance import _HaversineDistance
 from .Utils import ReadDatasetPartition
 
 def AssignCloserCentroidToPoints(
@@ -10,7 +10,6 @@ def AssignCloserCentroidToPoints(
         LongitudeColumn: str,
         LatitudeColumn: str,
         NumClusters: int,
-        Velocity: float = 50,
     ) -> list[int]:
 
     Centroids = _ReadSolution(
@@ -30,13 +29,13 @@ def AssignCloserCentroidToPoints(
         min_distance = float('inf')
 
         for index , centroid in enumerate(Centroids):
-            distance = CalculateTransferTime(point,centroid,Velocity)
+            distance = _HaversineDistance(point,centroid)
             if distance < min_distance:
                 min_distance = distance
                 closer_centroid = index
 
         CloserCentroidToPoints.append(closer_centroid)
-
+    
     return CloserCentroidToPoints
 
 def _ReadSolution(

@@ -6,8 +6,8 @@ def GetClustersFromCentroidsAssignation(
     ) -> list[list[int]]:
 
     Clusters = [[] for _ in range(NumClusters)]
-    for index_point , cluster in enumerate(ClusterPartition):
-        Clusters[cluster].append(index_point)
+    for index_point , index_cluster in enumerate(ClusterPartition):
+        Clusters[index_cluster].append(index_point)
 
     return Clusters
 

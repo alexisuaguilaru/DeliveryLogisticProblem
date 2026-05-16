@@ -68,4 +68,5 @@ def MainProgram():
         PENALIZATION,
     )
 
+    print(ClustersCosts)
     print(Fitness)

@@ -29,6 +29,10 @@ def GetClusterCost(
             point_i = ClusterPoints[index_i]
             point_j = ClusterPoints[index_j]
             Cost += CalculateTransferTime(point_i,point_j,Velocity)
+
+        point_i = ClusterPoints[-1]
+        point_j = ClusterPoints[0]
+        Cost += CalculateTransferTime(point_i,point_j,Velocity)
         
         Cost += _GetTotalLoad(
             ClusterPath,
@@ -47,7 +51,7 @@ def ObjectiveFunction(
     Fitness = stdev(ClustersCosts)
 
     if Penalization:
-        LoadConstraint = sum(cluster_cost<=MaxLoad for cluster_cost in ClustersCosts)
+        LoadConstraint = sum(MaxLoad<cluster_cost for cluster_cost in ClustersCosts)
         Fitness += LoadConstraint*sqrt(NumPoints)
 
     return Fitness
@@ -65,8 +69,8 @@ def _GetTotalLoad(
 
         TotalLoad = 0
         for data_point_row in reader(ClusterFile):
-            TotalLoad = float(data_point_row[IndexLoad])
-
+            TotalLoad += float(data_point_row[IndexLoad])
+    
     return TotalLoad
 
 def _GetIndexLoadFeature(
