@@ -63,21 +63,19 @@ def MainProgram():
         DatasetPath,
     )
 
-    exit(0)
-
     EndTime_Clusters = time()
 
     StartTime_CalculateCosts = time()
     ClustersCosts: list[float] = []
-    for cluster_path in ListClustersPath:
+    for cluster , cluster_load in zip(Clusters,ClustersLoads):
         cluster_cost: float = GetClusterCost(
-            cluster_path,
-            LONGITUDE_COLUMN,
-            LATITUDE_COLUMN,
-            LOAD_COLUMN
+            cluster,
+            cluster_load,
         )
 
         ClustersCosts.append(cluster_cost)
+
+    exit(0)
 
     NumPoints: int = sum(map(len,Clusters))
     Fitness: float = ObjectiveFunction(

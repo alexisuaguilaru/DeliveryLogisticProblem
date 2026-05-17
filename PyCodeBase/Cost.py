@@ -1,24 +1,15 @@
-from pathlib import Path
 from csv import reader
 from statistics import stdev
 from math import sqrt
 
-from .Utils import ReadDatasetPartition
 from .Distance import CalculateTransferTime
 
 def GetClusterCost(
-        ClusterPath: Path,
-        LongitudeColumn: str,
-        LatitudeColumn: str,
-        LoadColumn: str,
+        ClusterPoints: list[tuple[float,float]],
+        ClusterLoad: float,
         Velocity: float = 50,
     ) -> float:
 
-    ClusterPoints = ReadDatasetPartition(
-        ClusterPath,
-        LongitudeColumn,
-        LatitudeColumn,
-    )
     ClusterPoints.sort(key = lambda point: point[0])
 
     NumPoints = len(ClusterPoints)
@@ -34,10 +25,7 @@ def GetClusterCost(
         point_j = ClusterPoints[0]
         Cost += CalculateTransferTime(point_i,point_j,Velocity)
         
-        Cost += _GetTotalLoad(
-            ClusterPath,
-            LoadColumn,
-        )
+        Cost += ClusterLoad
 
     return Cost
 
@@ -55,23 +43,6 @@ def ObjectiveFunction(
         Fitness += LoadConstraint*sqrt(NumPoints)
 
     return Fitness
-
-def _GetTotalLoad(
-        ClusterPath: Path,
-        LoadColumn: str,
-    ) -> float:
-
-    with open(ClusterPath) as ClusterFile:
-        IndexLoad = _GetIndexLoadFeature(
-            ClusterFile.readline().strip().split(','),
-            LoadColumn,
-        )
-
-        TotalLoad = 0
-        for data_point_row in reader(ClusterFile):
-            TotalLoad += float(data_point_row[IndexLoad])
-    
-    return TotalLoad
 
 def _GetIndexLoadFeature(
         DatasetHeader: list[str],
