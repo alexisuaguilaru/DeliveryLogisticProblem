@@ -68,12 +68,12 @@ int dump_clusters_results(Cluster *clusters,
     fprintf(f, "Cost,Cluster\n");
     for (size_t i = 0; i < num_clusters; ++i) {
         fprintf(f, "%f,", costs[i]);
-        fputc('"', f);
+        fprintf(f,"\"[");
         for (size_t j = 0; j < clusters[i].count; ++j) {
             if (j > 0) fputc(',', f);
-            fprintf(f, "%zu", j);
+            fprintf(f, "%d", clusters[i].points[j].original_index);
         }
-        fprintf(f, "\"\n");
+        fprintf(f, "]\"\n");
     }
     
     fclose(f);

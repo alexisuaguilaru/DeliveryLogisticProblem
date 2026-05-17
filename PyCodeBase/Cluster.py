@@ -9,17 +9,19 @@ def GetClustersFromCentroidsAssignation(
         ClusterAssignation: list[int],
         NumClusters: int,
         DatasetPath: Path,
-    ) -> tuple[list[list[tuple[float,float]]],list[float]]:
+    ) -> tuple[list[list[tuple[float,float]]],list[float],list[list[int]]]:
 
     Clusters = [[] for _ in range(NumClusters)]
     ClustersLoads = [0 for _ in range(NumClusters)]
+    ClustersIndexes = [[] for _ in range(NumClusters)]
     Points = _GetPoints(DatasetPath)
 
-    for (point,load) , index_cluster in zip(Points,ClusterAssignation):
+    for index_point , ((point,load) , index_cluster) in enumerate(zip(Points,ClusterAssignation)):
         Clusters[index_cluster].append(point)
         ClustersLoads[index_cluster] += load
+        ClustersIndexes[index_cluster].append(index_point)
 
-    return Clusters , ClustersLoads
+    return Clusters , ClustersLoads , ClustersIndexes
 
 def _GetPoints(
         DatasetPath: Path,

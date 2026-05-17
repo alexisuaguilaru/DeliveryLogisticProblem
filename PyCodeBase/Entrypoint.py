@@ -57,7 +57,7 @@ def MainProgram():
     EndTime_CentroidsAssignation = time()
 
     StartTime_Clusters = time()
-    Clusters , ClustersLoads = GetClustersFromCentroidsAssignation(
+    Clusters , ClustersLoads , ClusterIndexes = GetClustersFromCentroidsAssignation(
         ClusterAssignation,
         NUM_CLUSTERS,
         DatasetPath,
@@ -87,7 +87,7 @@ def MainProgram():
     EndTime_Execution = time()
 
     DumpClustersResults(
-        Clusters,
+        ClusterIndexes,
         ClustersCosts,
         NAME_RESULTS,
     )
