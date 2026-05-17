@@ -1,41 +1,44 @@
 from time import time
 
 from .ArgparserCLI import MainArgParser
-from .LoadData import GetDatasetPartitions , WriteDatasetPartitions
+from .LoadData import GetDatasetRangePartitions , GetPointsPartitions
 from .CloserCentroid import AssignCloserCentroidToPoints
 from .Cluster import GetClustersFromCentroidsAssignation , WriteClusters
 from .Cost import GetClusterCost , ObjectiveFunction
 from .Results import DumpClustersResults , DumpInfoResults
 
 from pathlib import Path
+from sys import exit
 
 def MainProgram():
     ProgramArgs = MainArgParser.parse_args()
-    DATASET_PATH: Path = ProgramArgs.input_dataset
-    SOLUTION_PATH: Path = ProgramArgs.solution
+    DATASET_FILE: str = ProgramArgs.dataset
+    SOLUTION_FILE: Path = ProgramArgs.solution
     NUM_WORKERS: int = ProgramArgs.workers
-    LONGITUDE_COLUMN: str = ProgramArgs.longitude
-    LATITUDE_COLUMN: str = ProgramArgs.latitude
-    LOAD_COLUMN: str = ProgramArgs.load
     NUM_CLUSTERS: int = ProgramArgs.num_clusters
     MAX_LOAD: float = ProgramArgs.max_load
     PENALIZATION: bool = ProgramArgs.penalization
-    OUTPUT_PATH: Path = ProgramArgs.output_path
-    NAME_RESULTS: str = ProgramArgs.name_results
+    NAME_RESULTS: str = ProgramArgs.results
 
     StartTime_Execution = time()
 
+    BaseDataPath = Path('./data')
+    DatasetPath = BaseDataPath/DATASET_FILE
+
     StartTime_DatasetPartitions = time()
-    DatasetPartitions: list[int] = GetDatasetPartitions(
-        DATASET_PATH,
+    DatasetRangePartitions: list[int] = GetDatasetRangePartitions(
+        DatasetPath,
         NUM_WORKERS,
     )
 
-    ListPartitionsPath: list[Path] = WriteDatasetPartitions(
-        DATASET_PATH,
-        DatasetPartitions,
+
+    PointsPartitions: list[list[tuple[float,float]]] = GetPointsPartitions(
+        DatasetPath,
+        DatasetRangePartitions,
     )
     EndTime_DatasetPartitions = time()
+
+    exit(0)
 
     StartTime_CentroidsAssignation = time()
     ClusterPartition: list[int] = []

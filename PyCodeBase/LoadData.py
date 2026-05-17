@@ -1,11 +1,13 @@
+from csv import reader
+
 from pathlib import Path
 
-def GetDatasetPartitions(
+def GetDatasetRangePartitions(
         DatasetPath: Path,
         NumNodes: int,
     ) -> list[int]:
 
-    NumRows = _CountRows(DatasetPath)-1
+    NumRows = _CountRows(DatasetPath)
     RowsByNode = NumRows//NumNodes
     ResidualRows = NumRows%NumNodes
 
@@ -13,29 +15,33 @@ def GetDatasetPartitions(
     for index_partition in range(ResidualRows):
         Partitions[index_partition] += 1
 
-    return Partitions
+    RangePartitions = [0]
+    for partition in Partitions:
+        range_partition = RangePartitions[-1]+partition
+        RangePartitions.append(range_partition)
 
-def WriteDatasetPartitions(
+    return RangePartitions
+
+def GetPointsPartitions(
         DatasetPath: Path,
-        PartitionsSize: list[int]
-    ) -> list[Path]:
+        RangePartitions: list[int],
+    ) -> list[list[tuple[float,float]]]:
 
-    ListPartitionsPath = []
+    PointsPartitions = []
 
     with open(DatasetPath) as DatasetFile:
-        HeaderLine = DatasetFile.readline()
+        RowPoints = reader(DatasetFile)
 
-        for partition_id , num_points in enumerate(PartitionsSize,1):
-            partition_name = DatasetPath.stem+f'_{partition_id}'+DatasetPath.suffix
-            ListPartitionsPath.append(DatasetPath.parent/partition_name)
+        for start_partition , end_partition in zip(RangePartitions,RangePartitions[1:]):
+            point_partition = []
+            range_partition = range(start_partition,end_partition)
 
-            with open(ListPartitionsPath[-1],'w') as dataset_partition:
-                dataset_partition.write(HeaderLine)
-                
-                for _ , row_data in zip(range(num_points),DatasetFile):
-                    dataset_partition.write(row_data)
+            for _ , row_point in zip(range_partition,RowPoints):
+                point_partition.append(_ConvertRowToPoint(row_point))
+            
+            PointsPartitions.append(point_partition)
 
-    return ListPartitionsPath
+    return PointsPartitions
 
 def _CountRows(
         DatasetPath: Path,
@@ -43,3 +49,12 @@ def _CountRows(
 
     with open(DatasetPath) as dataset_file:
         return sum(1 for _ in dataset_file)
+    
+def _ConvertRowToPoint(
+        RowPoint: list[str],
+    ):
+
+    return (
+        float(RowPoint[0]),
+        float(RowPoint[1]),
+    )
