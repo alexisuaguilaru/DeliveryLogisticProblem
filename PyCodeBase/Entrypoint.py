@@ -75,8 +75,6 @@ def MainProgram():
 
         ClustersCosts.append(cluster_cost)
 
-    exit(0)
-
     NumPoints: int = sum(map(len,Clusters))
     Fitness: float = ObjectiveFunction(
         ClustersCosts,
@@ -86,12 +84,12 @@ def MainProgram():
     )
     EndTime_CalculateCosts = time()
 
+    # exit(0)
     EndTime_Execution = time()
 
     DumpClustersResults(
         Clusters,
         ClustersCosts,
-        OUTPUT_PATH,
         NAME_RESULTS,
     )
 
@@ -102,6 +100,5 @@ def MainProgram():
         EndTime_CentroidsAssignation-StartTime_CentroidsAssignation,
         EndTime_Clusters-StartTime_Clusters,
         EndTime_CalculateCosts-StartTime_CalculateCosts,
-        OUTPUT_PATH,
         NAME_RESULTS,
     )

@@ -3,10 +3,10 @@ from pathlib import Path
 def DumpClustersResults(
         Clusters: list[list[int]],
         ClustersCosts: list[float],
-        OutputPath: Path,
         NameResults: str,
     ) -> None:
 
+    OutputPath = Path('./results')
     OutputPath.mkdir(parents=True,exist_ok=True)
 
     with open(OutputPath/f'{NameResults}_clusters.csv','w') as clusters_file:
@@ -24,10 +24,10 @@ def DumpInfoResults(
         TimeCentroidsAssignation: float,
         TimeClusters: float,
         TimeCalculateCosts: float,
-        OutputPath: Path,
         NameResults: str,
     ) -> None:
 
+    OutputPath = Path('./results')
     OutputPath.mkdir(parents=True,exist_ok=True)
 
     with open(OutputPath/f'{NameResults}_info.csv','w') as clusters_file:
