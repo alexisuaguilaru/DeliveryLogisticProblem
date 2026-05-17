@@ -86,7 +86,7 @@ int dump_info_results(ExecutionMetrics *metrics, const char *results_name) {
     char filepath[512];
     char dirpath[512];
 
-    snprintf(filepath, sizeof(filepath), "./results/%s.csv", results_name);
+    snprintf(filepath, sizeof(filepath), "./results/%s_info.csv", results_name);
     get_parent_dir(filepath, dirpath, sizeof(dirpath));
 
     if (mkdirs(dirpath) != 0) return -1;

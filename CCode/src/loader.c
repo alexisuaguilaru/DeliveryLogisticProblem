@@ -56,32 +56,69 @@ PointWithLoad *load_points_csv(const char *filepath, size_t *out_count) {
 
 CentroidSet *load_centroids_csv(const char *filepath, size_t num_centroids) {
     FILE *f = fopen(filepath, "r");
-    if (!f) return NULL;
-    
+    if (!f) {
+        fprintf(stderr, "[ERROR] No se pudo abrir archivo de centroides: %s\n", filepath);
+        return NULL;
+    }
+
     CentroidSet *set = malloc(sizeof(CentroidSet));
     if (!set) { fclose(f); return NULL; }
+
+    set->centroids = calloc(num_centroids, sizeof(Point)); 
+    if (!set->centroids) { free(set); fclose(f); return NULL; }    
     
-    set->centroids = malloc(num_centroids * sizeof(Point));
-    if (!set->centroids) { free(set); fclose(f); return NULL; }
-    
-    char content[4096];
-    size_t read = fread(content, 1, sizeof(content) - 1, f);
-    content[read] = '\0';
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    if (fsize <= 0) {
+        fprintf(stderr, "[ERROR] Archivo de centroides vacío.\n");
+        free(set->centroids); free(set); fclose(f); return NULL;
+    }
+
+    char *content = malloc(fsize + 1);
+    if (!content) {
+        free(set->centroids); free(set); fclose(f); return NULL;
+    }
+
+    size_t read_size = fread(content, 1, fsize, f);
+    content[read_size] = '\0'; 
     fclose(f);
-    
+
+    for (long i = 0; i < (long)read_size; ++i) {
+        if (content[i] == '\n' || content[i] == '\r' || content[i] == '"') {
+            content[i] = ',';
+        }
+    }
+
     char *token = strtok(content, ",");
     size_t idx = 0;
-    
-    while (token && idx < num_centroids) {
-        set->centroids[idx].lon = atof(token);
+    int reading_lon = 1; 
+
+    while (token != NULL && idx < num_centroids) {
+        
+        if (*token == '\0' || *token == ' ') {
+            token = strtok(NULL, ",");
+            continue;
+        }
+
+        double val = atof(token); 
+        
+        if (reading_lon) {
+            set->centroids[idx].lon = val;
+            reading_lon = 0;
+        } else {
+            set->centroids[idx].lat = val;
+            reading_lon = 1;
+            idx++; 
+        }
+
         token = strtok(NULL, ",");
-        if (!token) break;
-        set->centroids[idx].lat = atof(token);
-        token = strtok(NULL, ",");
-        idx++;
     }
-    
-    set->num_centroids = num_centroids;
+
+    free(content); 
+    set->num_centroids = num_centroids; 
+
     return set;
 }
 

@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
         free(partitions); free(partition_sizes);
         return EXIT_FAILURE;
     }
-    
+
     double start_assign = clock();
     CentroidSet *centroids = load_centroids_csv(args.solution_path, args.num_clusters);
     if (!centroids) {
@@ -137,7 +137,8 @@ int main(int argc, char **argv) {
     
     metrics.time_total = (clock() - start_total) / (double)CLOCKS_PER_SEC;
     
-    if (dump_info_results(&metrics, args.results_name) != 0) {
+    if (dump_clusters_results(clusters, args.num_clusters, cluster_costs, args.results_name) != 0 ||
+        dump_info_results(&metrics, args.results_name) != 0) {
         fprintf(stderr, "Warning: Error to dump results\n");
     }
     
