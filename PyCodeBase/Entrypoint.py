@@ -2,7 +2,7 @@ from time import time
 
 from .ArgparserCLI import MainArgParser
 from .LoadData import GetDatasetRangePartitions , GetPointsPartitions
-from .CloserCentroid import AssignCloserCentroidToPoints
+from .CloserCentroid import ReadSolution , AssignCloserCentroidToPoints
 from .Cluster import GetClustersFromCentroidsAssignation , WriteClusters
 from .Cost import GetClusterCost , ObjectiveFunction
 from .Results import DumpClustersResults , DumpInfoResults
@@ -38,20 +38,25 @@ def MainProgram():
     )
     EndTime_DatasetPartitions = time()
 
-    exit(0)
 
     StartTime_CentroidsAssignation = time()
-    ClusterPartition: list[int] = []
-    for partition_path in ListPartitionsPath:
+
+    SolutionPath = BaseDataPath/SOLUTION_FILE
+    Centroids: list[tuple[float,float]] = ReadSolution(
+        SolutionPath,
+        NUM_CLUSTERS,
+    )
+
+    ClusterAssignation: list[int] = []
+    for points_partition in PointsPartitions:
         centroids_assignation: list[int] = AssignCloserCentroidToPoints(
-            partition_path,
-            SOLUTION_PATH,
-            LONGITUDE_COLUMN,
-            LATITUDE_COLUMN,
-            NUM_CLUSTERS,
+            Centroids,
+            points_partition,
         )
-        ClusterPartition += centroids_assignation
+        ClusterAssignation += centroids_assignation
     EndTime_CentroidsAssignation = time()
+
+    exit(0)
 
     StartTime_Clusters = time()
     Clusters: list[list[int]] = GetClustersFromCentroidsAssignation(
