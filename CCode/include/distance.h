@@ -2,6 +2,7 @@
 #define DISTANCE_H
 
 #include "types.h"
+#include "utils.h"
 
 double haversine_distance(
     Point a, 

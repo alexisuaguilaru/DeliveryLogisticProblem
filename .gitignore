@@ -1,4 +1,9 @@
+*.md
+
 __pycache__
+**.ipynb
 
 results/*
 __**/
+*.o
+LogisticDelivery

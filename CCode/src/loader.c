@@ -1,3 +1,4 @@
+#include "config.h"
 #include "loader.h"
 #include "utils.h"
 #include <stdio.h>
