@@ -14,6 +14,7 @@ size_t count_csv_lines(const char *filepath) {
     while (fgets(buffer, sizeof(buffer), f)) {
         if (trim_whitespace(buffer)[0] != '\0') count++;
     }
+
     fclose(f);
     return count;
 }
