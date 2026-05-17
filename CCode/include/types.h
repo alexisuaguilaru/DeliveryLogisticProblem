@@ -15,7 +15,13 @@ typedef struct {
 } PointWithLoad;
 
 typedef struct {
-    Point *points;
+    Point point;
+    double load;
+    int original_index; 
+} ClusterPoint;
+
+typedef struct {
+    ClusterPoint *points;
     size_t count;
     size_t capacity;
     double total_load;

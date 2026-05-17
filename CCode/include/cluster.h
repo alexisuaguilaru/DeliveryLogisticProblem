@@ -9,7 +9,8 @@ Cluster *cluster_create(size_t initial_capacity);
 void cluster_add_point(
     Cluster *cluster, 
     Point point, 
-    double load
+    double load,
+    int original_index
 );
 
 void cluster_free(Cluster *cluster);

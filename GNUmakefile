@@ -40,7 +40,7 @@ BUILD_DIR := $(BASE_DIR)/build
 
 CC := gcc
 LINKER := mpicc
-CFLAGS := -g -ggdb -O -Wall -Wextra -I$(INC_DIR)
+CFLAGS := -g -ggdb -O0 -Wall -Wextra -I$(INC_DIR) -ffp-contract=off
 LDFLAGS := 
 
 CFILES := $(wildcard $(SRC_DIR)/*.c)

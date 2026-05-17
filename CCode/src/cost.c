@@ -12,14 +12,16 @@ double calculate_cluster_cost(Cluster *cluster, double velocity_kmh) {
     if (cluster->count > 1) {
         for (size_t i = 0; i < cluster->count - 1; ++i) {
             cost += calculate_transfer_time(
-                cluster->points[i], 
-                cluster->points[i + 1], 
+                cluster->points[i].point, 
+                cluster->points[i + 1].point, 
                 velocity_kmh
             );
+
         }
+
         cost += calculate_transfer_time(
-            cluster->points[cluster->count - 1],
-            cluster->points[0],
+            cluster->points[cluster->count - 1].point,
+            cluster->points[0].point,
             velocity_kmh
         );
     }

@@ -101,3 +101,6 @@ def MainProgram():
         EndTime_CalculateCosts-StartTime_CalculateCosts,
         NAME_RESULTS,
     )
+
+    print(f'Fitness: {Fitness}')
+    print(f'Total time: {EndTime_Execution-StartTime_Execution} s')

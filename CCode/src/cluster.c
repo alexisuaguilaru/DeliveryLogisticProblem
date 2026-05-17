@@ -9,7 +9,7 @@ Cluster *cluster_create(size_t initial_capacity) {
     Cluster *c = malloc(sizeof(Cluster));
     if (!c) return NULL;
     
-    c->points = malloc(initial_capacity * sizeof(Point));
+    c->points = malloc(initial_capacity * sizeof(ClusterPoint));
     if (!c->points) {
         free(c);
         return NULL;
@@ -21,15 +21,19 @@ Cluster *cluster_create(size_t initial_capacity) {
     return c;
 }
 
-void cluster_add_point(Cluster *cluster, Point point, double load) {
+void cluster_add_point(Cluster *cluster, Point point, double load, int original_index) {
     if (cluster->count >= cluster->capacity) {
         size_t new_cap = cluster->capacity * 2;
-        Point *new_points = realloc(cluster->points, new_cap * sizeof(Point));
+        ClusterPoint *new_points = realloc(cluster->points, new_cap * sizeof(ClusterPoint));
         if (!new_points) return;
         cluster->points = new_points;
         cluster->capacity = new_cap;
     }
-    cluster->points[cluster->count++] = point;
+    cluster->points[cluster->count].point = point;
+    cluster->points[cluster->count].load = load;
+    cluster->points[cluster->count].original_index = original_index;
+
+    cluster->count++;
     cluster->total_load += load;
 }
 
@@ -67,9 +71,13 @@ int *assign_centroids_to_points(CentroidSet *centroids,
 }
 
 static int compare_by_longitude(const void *a, const void *b) {
-    const Point *pa = (const Point *)a;
-    const Point *pb = (const Point *)b;
-    return (pa->lon > pb->lon) - (pa->lon < pb->lon);
+    const ClusterPoint *pa = (const ClusterPoint *)a;
+    const ClusterPoint *pb = (const ClusterPoint *)b;
+    
+    if (pa->point.lon < pb->point.lon) return -1;
+    if (pa->point.lon > pb->point.lon) return 1;
+    
+    return pa->original_index - pb->original_index;
 }
 
 Cluster *build_clusters_from_assignments(int *assignments,
@@ -89,13 +97,13 @@ Cluster *build_clusters_from_assignments(int *assignments,
     for (size_t i = 0; i < num_points; ++i) {
         int cid = assignments[i];
         if (cid >= 0 && cid < (int)num_clusters) {
-            cluster_add_point(&clusters[cid], points[i].point, points[i].load);
+            cluster_add_point(&clusters[cid], points[i].point, points[i].load, (int)i);
         }
     }
     
     for (size_t i = 0; i < num_clusters; ++i) {
         if (clusters[i].count > 1) {
-            qsort(clusters[i].points, clusters[i].count, sizeof(Point), compare_by_longitude);
+            qsort(clusters[i].points, clusters[i].count, sizeof(ClusterPoint), compare_by_longitude);
         }
     }
     
