@@ -1,5 +1,7 @@
 from csv import reader
 
+from .Utils import ConvertRowToPoint
+
 from pathlib import Path
 
 def GetDatasetRangePartitions(
@@ -37,7 +39,7 @@ def GetPointsPartitions(
             range_partition = range(start_partition,end_partition)
 
             for _ , row_point in zip(range_partition,RowPoints):
-                point_partition.append(_ConvertRowToPoint(row_point))
+                point_partition.append(ConvertRowToPoint(row_point))
             
             PointsPartitions.append(point_partition)
 
@@ -49,12 +51,3 @@ def _CountRows(
 
     with open(DatasetPath) as dataset_file:
         return sum(1 for _ in dataset_file)
-    
-def _ConvertRowToPoint(
-        RowPoint: list[str],
-    ):
-
-    return (
-        float(RowPoint[0]),
-        float(RowPoint[1]),
-    )

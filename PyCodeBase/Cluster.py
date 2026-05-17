@@ -1,38 +1,32 @@
+from csv import reader
+
+from .Utils import ConvertRowToPoint
+
 from pathlib import Path
+from typing import Generator
 
 def GetClustersFromCentroidsAssignation(
-        ClusterPartition: list[int],
+        ClusterAssignation: list[int],
         NumClusters: int,
-    ) -> list[list[int]]:
+        DatasetPath: Path,
+    ) -> tuple[list[list[tuple[float,float]]],list[float]]:
 
     Clusters = [[] for _ in range(NumClusters)]
-    for index_point , index_cluster in enumerate(ClusterPartition):
-        Clusters[index_cluster].append(index_point)
+    ClustersLoads = [0 for _ in range(NumClusters)]
+    Points = _GetPoints(DatasetPath)
 
-    return Clusters
+    for (point,load) , index_cluster in zip(Points,ClusterAssignation):
+        Clusters[index_cluster].append(point)
+        ClustersLoads[index_cluster] += load
 
-def WriteClusters(
+    return Clusters , ClustersLoads
+
+def _GetPoints(
         DatasetPath: Path,
-        Clusters: list[list[int]],
-    ) -> list[Path]:
+    ) -> Generator[tuple[tuple[float,float],float]]:
 
-    ListClustersPath = []
+    with open(DatasetPath) as DatasetFile:
+        RowPoints = reader(DatasetFile)
 
-    for cluster_id , cluster in enumerate(Clusters,1):
-        cluster_name = DatasetPath.parent/f'cluster_{cluster_id}.csv'
-        ListClustersPath.append(cluster_name)
-
-        with open(DatasetPath) as DatasetFile , open(ListClustersPath[-1],'w') as cluster_file:
-            HeaderLine = DatasetFile.readline()
-            cluster_file.write(HeaderLine)
-
-            index_cluster = 0
-            for index_row , data_point_row in enumerate(DatasetFile):
-                if index_row == cluster[index_cluster]:
-                    cluster_file.write(data_point_row)
-                    index_cluster += 1
-                
-                if index_cluster == len(cluster):
-                    break
-
-    return ListClustersPath
+        for row_point in RowPoints:
+            yield ConvertRowToPoint(row_point) , float(row_point[2])

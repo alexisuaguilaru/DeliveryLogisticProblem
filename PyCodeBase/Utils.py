@@ -1,6 +1,15 @@
 from pathlib import Path
 from csv import reader
 
+def ConvertRowToPoint(
+        RowPoint: list[str],
+    ):
+
+    return (
+        float(RowPoint[0]),
+        float(RowPoint[1]),
+    )
+
 def ReadDatasetPartition(
         PartitionPath: Path,
         LongitudeColumn: str,

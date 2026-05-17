@@ -3,7 +3,7 @@ from time import time
 from .ArgparserCLI import MainArgParser
 from .LoadData import GetDatasetRangePartitions , GetPointsPartitions
 from .CloserCentroid import ReadSolution , AssignCloserCentroidToPoints
-from .Cluster import GetClustersFromCentroidsAssignation , WriteClusters
+from .Cluster import GetClustersFromCentroidsAssignation
 from .Cost import GetClusterCost , ObjectiveFunction
 from .Results import DumpClustersResults , DumpInfoResults
 
@@ -56,18 +56,15 @@ def MainProgram():
         ClusterAssignation += centroids_assignation
     EndTime_CentroidsAssignation = time()
 
+    StartTime_Clusters = time()
+    Clusters , ClustersLoads = GetClustersFromCentroidsAssignation(
+        ClusterAssignation,
+        NUM_CLUSTERS,
+        DatasetPath,
+    )
+
     exit(0)
 
-    StartTime_Clusters = time()
-    Clusters: list[list[int]] = GetClustersFromCentroidsAssignation(
-        ClusterPartition,
-        NUM_CLUSTERS,
-    )
-
-    ListClustersPath: list[Path] = WriteClusters(
-        DATASET_PATH,
-        Clusters,
-    )
     EndTime_Clusters = time()
 
     StartTime_CalculateCosts = time()
