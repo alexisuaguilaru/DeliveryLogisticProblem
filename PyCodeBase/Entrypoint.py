@@ -84,7 +84,6 @@ def MainProgram():
     )
     EndTime_CalculateCosts = time()
 
-    # exit(0)
     EndTime_Execution = time()
 
     DumpClustersResults(

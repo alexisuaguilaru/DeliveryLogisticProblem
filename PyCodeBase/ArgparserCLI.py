@@ -7,52 +7,24 @@ MainArgParser = argparse.ArgumentParser(
 )
 
 MainArgParser.add_argument(
-    '-if', '--input-dataset',
+    '-in', '--dataset',
     required = True,
-    help = 'Path to the CSV file with the coordinates, loads and identifier of every point.',
-    type = Path,
-)
-
-MainArgParser.add_argument(
-    '--longitude',
-    default = 'lon',
-    help = 'Dataset feature related to point longitude',
-    type = str,
-)
-
-MainArgParser.add_argument(
-    '--latitude',
-    default = 'lat',
-    help = 'Dataset feature related to point latitude',
-    type = str,
-)
-
-MainArgParser.add_argument(
-    '-l', '--load',
-    default = 'load',
-    help = 'Dataset feature related to point load.',
+    help = 'Name of the CSV file with the coordinates (longitude,latitude) and loads of every point.',
     type = str,
 )
 
 MainArgParser.add_argument(
     '-s', '--solution',
     required = True,
-    help = 'Path to the CSV file with the values of a solution.',
+    help = 'Name of the CSV file with the values of a solution.',
     type = str,
 )
 
 MainArgParser.add_argument(
     '-k', '--num-clusters',
     default = 10,
-    help = 'Number of clusters to form.',
+    help = 'Number of clusters of the solution.',
     type = int,
-)
-
-MainArgParser.add_argument(
-    '-d','-distance',
-    default = 'haversine',
-    help = 'Distance function name to calculate distances between centroids and points',
-    type = str, 
 )
 
 MainArgParser.add_argument(
@@ -72,15 +44,7 @@ MainArgParser.add_argument(
 )
 
 MainArgParser.add_argument(
-    '-op', '--output-path',
-    default = 'output_files',
-    required = True,
-    help = 'Path of the folder for output or results.',
-    type = Path,
-)
-
-MainArgParser.add_argument(
-    '-nr', '--name-results',
+    '-out', '--results',
     required = True,
     help = 'Results name or identifier.',
     type = str,

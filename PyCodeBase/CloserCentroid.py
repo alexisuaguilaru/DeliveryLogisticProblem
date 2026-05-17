@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from .Distance import _HaversineDistance
-from .Utils import ReadDatasetPartition
 
 def ReadSolution(
         SolutionPath: Path,

@@ -1,4 +1,3 @@
-from csv import reader
 from statistics import stdev
 from math import sqrt
 
@@ -43,17 +42,3 @@ def ObjectiveFunction(
         Fitness += LoadConstraint*sqrt(NumPoints)
 
     return Fitness
-
-def _GetIndexLoadFeature(
-        DatasetHeader: list[str],
-        LoadColumn: str,
-    ) -> int:
-
-    IndexLoad = None
-
-    for index_label , column_label in enumerate(DatasetHeader):
-        if column_label == LoadColumn:
-            IndexLoad = index_label
-            break
-    
-    return IndexLoad

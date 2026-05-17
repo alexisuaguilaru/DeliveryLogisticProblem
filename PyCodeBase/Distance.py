@@ -23,7 +23,6 @@ def _HaversineDistance(
 
     CosDif_x = cos(Point_1_x-Point_2_x)
     CosDif_y = cos(Point_1_y-Point_2_y)
-    CosSum_x = cos(Point_1_x+Point_2_x)
     CosSum_y = cos(Point_1_y+Point_2_y)
 
     Term_1 = (1+CosDif_x)*CosDif_y
