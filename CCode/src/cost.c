@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 double calculate_cluster_cost(Cluster *cluster, double velocity_kmh) {
-    if (!cluster || cluster->count == 0) return 0.0;
+    if (!cluster || cluster->count <= 1) return 0.0;
     
     double cost = 0.0;
     
@@ -55,13 +55,13 @@ double objective_function(double *cluster_costs,
     double fitness = calculate_stdev(cluster_costs, num_clusters);
     
     if (penalization) {
-        double penalty_sum = 0.0;
+        int load_constraint = 0;
         for (size_t i = 0; i < num_clusters; ++i) {
             if (cluster_costs[i] > max_load) {
-                penalty_sum += max_load;
+                load_constraint++;
             }
         }
-        fitness += penalty_sum / num_points;
+        fitness += load_constraint*sqrt(num_points);
     }
     
     return fitness;

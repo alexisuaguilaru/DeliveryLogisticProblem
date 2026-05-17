@@ -56,10 +56,7 @@ PointWithLoad *load_points_csv(const char *filepath, size_t *out_count) {
 
 CentroidSet *load_centroids_csv(const char *filepath, size_t num_centroids) {
     FILE *f = fopen(filepath, "r");
-    if (!f) {
-        fprintf(stderr, "[ERROR] No se pudo abrir archivo de centroides: %s\n", filepath);
-        return NULL;
-    }
+    if (!f) return NULL;
 
     CentroidSet *set = malloc(sizeof(CentroidSet));
     if (!set) { fclose(f); return NULL; }
@@ -71,10 +68,7 @@ CentroidSet *load_centroids_csv(const char *filepath, size_t num_centroids) {
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    if (fsize <= 0) {
-        fprintf(stderr, "[ERROR] Archivo de centroides vacío.\n");
-        free(set->centroids); free(set); fclose(f); return NULL;
-    }
+    if (fsize <= 0) { free(set->centroids); free(set); fclose(f); return NULL; }
 
     char *content = malloc(fsize + 1);
     if (!content) {
