@@ -195,114 +195,39 @@ int main(int argc, char **argv) {
         
         free(all_points);
         free(all_assignments);
-    }
 
-    if(rank==0) metrics.time_cluster = MPI_Wtime() - t_clusters_start;
+        metrics.time_cluster = MPI_Wtime() - t_clusters_start;
+        double t_cost_start = MPI_Wtime();
 
-    double t_cost_start = MPI_Wtime();
-    ClusterPoint *flat_points = NULL;
-    int *c_sizes = NULL, *c_offsets = NULL;
-    double *c_loads = NULL;
-
-    int total_pts_int = (int)total_points;
-    int num_clust_int = (int)num_clusters;
-    int total_bytes   = total_pts_int * (int)sizeof(ClusterPoint);
-
-    #define TAG_SIZES   10
-    #define TAG_OFFSETS 11
-    #define TAG_LOADS   12
-    #define TAG_POINTS  13
-
-    if (rank == 0) {
-        flat_points = malloc(total_pts_int * sizeof(ClusterPoint));
-        c_sizes     = malloc(num_clust_int * sizeof(int));
-        c_offsets   = malloc(num_clust_int * sizeof(int));
-        c_loads     = malloc(num_clust_int * sizeof(double));
-
-        if (!flat_points || !c_sizes || !c_offsets || !c_loads) MPI_Abort(MPI_COMM_WORLD, 7);
-
-        size_t cur = 0;
-        for (int i = 0; i < num_clust_int; ++i) {
-            c_sizes[i]   = (int)clusters[i].count;
-            c_loads[i]   = clusters[i].total_load;
-            c_offsets[i] = (int)cur;
-            if (clusters[i].count > 0) {
-                memcpy(flat_points + cur, clusters[i].points, clusters[i].count * sizeof(ClusterPoint));
-                cur += clusters[i].count;
-            }
+        cluster_costs = malloc(num_clusters * sizeof(double));
+        for (int i = 0; i < num_clusters; ++i) {
+            cluster_costs[i] = calculate_cluster_cost(&clusters[i], DEFAULT_VELOCITY_KMH);
         }
-        
-        for (int dest = 1; dest < size; ++dest) {
-            MPI_Send(c_sizes,   num_clust_int, MPI_INT,    dest, TAG_SIZES,   MPI_COMM_WORLD);
-            MPI_Send(c_offsets, num_clust_int, MPI_INT,    dest, TAG_OFFSETS, MPI_COMM_WORLD);
-            MPI_Send(c_loads,   num_clust_int, MPI_DOUBLE, dest, TAG_LOADS,   MPI_COMM_WORLD);
-            MPI_Send(flat_points, total_bytes, MPI_BYTE,   dest, TAG_POINTS,  MPI_COMM_WORLD);
-        }
-        
-    } else {
-        c_sizes     = malloc(num_clust_int * sizeof(int));
-        c_offsets   = malloc(num_clust_int * sizeof(int));
-        c_loads     = malloc(num_clust_int * sizeof(double));
-        flat_points = malloc(total_pts_int * sizeof(ClusterPoint));
 
-        if (!c_sizes || !c_offsets || !c_loads || !flat_points) MPI_Abort(MPI_COMM_WORLD, 8);
+        metrics.time_cost = MPI_Wtime() - t_cost_start;
 
-        MPI_Status status;
-        MPI_Recv(c_sizes,   num_clust_int, MPI_INT,    0, TAG_SIZES,   MPI_COMM_WORLD, &status);
-        MPI_Recv(c_offsets, num_clust_int, MPI_INT,    0, TAG_OFFSETS, MPI_COMM_WORLD, &status);
-        MPI_Recv(c_loads,   num_clust_int, MPI_DOUBLE, 0, TAG_LOADS,   MPI_COMM_WORLD, &status);
-        MPI_Recv(flat_points, total_bytes, MPI_BYTE,   0, TAG_POINTS,  MPI_COMM_WORLD, &status);
-    }
-
-    double *local_costs = calloc(num_clust_int, sizeof(double));
-    for (int i = rank; i < num_clust_int; i += size) {
-        Cluster temp_c;
-        temp_c.points      = flat_points + c_offsets[i];
-        temp_c.count       = c_sizes[i];
-        temp_c.total_load  = c_loads[i];
-        temp_c.capacity    = temp_c.count;
-        local_costs[i]     = calculate_cluster_cost(&temp_c, DEFAULT_VELOCITY_KMH);
-    }
-    
-
-    double t_cost_end = MPI_Wtime();
-    metrics.time_cost = t_cost_end - t_cost_start;
-
-    free(flat_points);
-    free(c_sizes);
-    free(c_offsets);
-    free(c_loads);
-
-    cluster_costs = malloc(num_clust_int * sizeof(double));
-    if (!cluster_costs) MPI_Abort(MPI_COMM_WORLD, 9);
-
-    MPI_Reduce(local_costs, cluster_costs, num_clust_int, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    free(local_costs);
-
-    if (rank == 0) {
-        metrics.fitness = objective_function(cluster_costs, num_clusters, 
-                                             max_load, total_points, penalization);
+        double fitness = objective_function(cluster_costs, num_clusters, 
+                                            max_load, total_points, penalization);
         
         uswtime(&utime_end, &stime_end, &wtime_end);
-        metrics.time_total = MPI_Wtime() - t_total_start;
+        double t_total_end = MPI_Wtime();
+        
+        metrics.fitness = fitness;
+        metrics.time_total = t_total_end - t_total_start;
+        metrics.time_assign = t_assign_end - t_assign_start;
         metrics.real_time = wtime_end-wtime_start;
         metrics.user_time = utime_end-utime_start;
         metrics.sys_time = stime_end-stime_start;
         metrics.cpu_wall = 100*((metrics.user_time+metrics.sys_time)/metrics.real_time);
-
+        
         dump_clusters_results(clusters, num_clusters, cluster_costs, args.results_name);
         dump_info_results(&metrics, args.results_name);
 
         free(cluster_costs);
-        for (int i = 0; i < num_clust_int; ++i) {
-            if (clusters[i].points) free(clusters[i].points);
-        }
-        free(clusters);
+        free_clusters(clusters, num_clusters);
     }
 
     MPI_Type_free(&MPI_PWL);
     MPI_Finalize();
-
-
     return EXIT_SUCCESS;
 }
