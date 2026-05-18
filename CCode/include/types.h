@@ -49,6 +49,10 @@ typedef struct {
     double time_assign;
     double time_cluster;
     double time_cost;
+    double real_time;
+    double user_time;
+    double sys_time;
+    double cpu_wall;
 } ExecutionMetrics;
 
 #endif

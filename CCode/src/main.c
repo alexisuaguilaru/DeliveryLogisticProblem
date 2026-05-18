@@ -13,6 +13,7 @@
 #include "cost.h"
 #include "results.h"
 #include "distance.h"
+#include "timing.h"
 
 static void print_usage(const char *prog) {
     fprintf(stderr, "Help: %s -i <dataset> -s <solution> -o <results> [options]\n", prog);
@@ -74,6 +75,8 @@ int main(int argc, char **argv) {
     args.num_workers = size;
 
     ExecutionMetrics metrics = {0};
+    double utime_start, stime_start, wtime_start;
+    double utime_end, stime_end, wtime_end;
 
     MPI_Datatype MPI_PWL;
     {
@@ -100,14 +103,17 @@ int main(int argc, char **argv) {
     double *cluster_costs = NULL;
 
     MPI_Barrier(MPI_COMM_WORLD);
-    double t_start = MPI_Wtime();
 
+    uswtime(&utime_start, &stime_start, &wtime_start);
+    double t_total_start = MPI_Wtime();
+
+    double t_part_start = MPI_Wtime();
     if (rank == 0) {
         all_points = load_points_csv(args.dataset_path, &total_points);
-        if (!all_points) { fprintf(stderr, "[R0] Error dataset\n"); MPI_Abort(MPI_COMM_WORLD, 1); }
+        if (!all_points) { fprintf(stderr, "Error dataset\n"); MPI_Abort(MPI_COMM_WORLD, 1); }
 
         CentroidSet *temp_c = load_centroids_csv(args.solution_path, args.num_clusters);
-        if (!temp_c) { fprintf(stderr, "[R0] Error centroides\n"); MPI_Abort(MPI_COMM_WORLD, 2); }
+        if (!temp_c) { fprintf(stderr, "Error centroids\n"); MPI_Abort(MPI_COMM_WORLD, 2); }
 
         centroid_coords = malloc(args.num_clusters * 2 * sizeof(double));
         for (int i = 0; i < args.num_clusters; ++i) {
@@ -126,6 +132,8 @@ int main(int argc, char **argv) {
             if (i > 0) displs[i] = displs[i-1] + counts[i-1];
         }
     }
+
+    if (rank == 0) metrics.time_partition = MPI_Wtime()-t_part_start;
 
     double params[3] = {(double)args.num_clusters, args.max_load, (double)args.penalization};
     MPI_Bcast(params, 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -180,6 +188,7 @@ int main(int argc, char **argv) {
     free(counts);
     free(displs);
 
+    double t_clusters_start = MPI_Wtime();
     if (rank == 0) {
         clusters = build_clusters_from_assignments(all_assignments, total_points, 
                                                    all_points, total_points, num_clusters);
@@ -187,6 +196,8 @@ int main(int argc, char **argv) {
         free(all_points);
         free(all_assignments);
     }
+
+    if(rank==0) metrics.time_cluster = MPI_Wtime() - t_clusters_start;
 
     double t_cost_start = MPI_Wtime();
     ClusterPoint *flat_points = NULL;
@@ -252,6 +263,8 @@ int main(int argc, char **argv) {
         temp_c.capacity    = temp_c.count;
         local_costs[i]     = calculate_cluster_cost(&temp_c, DEFAULT_VELOCITY_KMH);
     }
+    
+
     double t_cost_end = MPI_Wtime();
     metrics.time_cost = t_cost_end - t_cost_start;
 
@@ -269,7 +282,13 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         metrics.fitness = objective_function(cluster_costs, num_clusters, 
                                              max_load, total_points, penalization);
-        metrics.time_total = MPI_Wtime() - t_start;
+        
+        uswtime(&utime_end, &stime_end, &wtime_end);
+        metrics.time_total = MPI_Wtime() - t_total_start;
+        metrics.real_time = wtime_end-wtime_start;
+        metrics.user_time = utime_end-utime_start;
+        metrics.sys_time = stime_end-stime_start;
+        metrics.cpu_wall = 100*((metrics.user_time+metrics.sys_time)/metrics.real_time);
 
         dump_clusters_results(clusters, num_clusters, cluster_costs, args.results_name);
         dump_info_results(&metrics, args.results_name);
@@ -283,5 +302,7 @@ int main(int argc, char **argv) {
 
     MPI_Type_free(&MPI_PWL);
     MPI_Finalize();
+
+
     return EXIT_SUCCESS;
 }

@@ -101,6 +101,10 @@ int dump_info_results(ExecutionMetrics *metrics, const char *results_name) {
     fprintf(f, "TimeCentroidsAssignation,%f\n", metrics->time_assign);
     fprintf(f, "TimeClusters,%f\n", metrics->time_cluster);
     fprintf(f, "TimeCalculateCosts,%f\n", metrics->time_cost);
+    fprintf(f, "RealTime,%f\n", metrics->real_time);
+    fprintf(f, "UserTime,%f\n", metrics->user_time);
+    fprintf(f, "SysTime,%f\n", metrics->sys_time);
+    fprintf(f, "CPUWall,%f\n", metrics->cpu_wall);
     
     fclose(f);
     return 0;
