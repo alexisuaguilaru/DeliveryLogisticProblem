@@ -110,6 +110,75 @@ Cluster *build_clusters_from_assignments(int *assignments,
     return clusters;
 }
 
+Cluster* build_clusters_optimized(const int *assignments, size_t total_points, 
+                                  const PointWithLoad *points, int num_clusters) {
+    if (!assignments || !points || num_clusters <= 0) return NULL;
+
+    Cluster *clusters = calloc(num_clusters, sizeof(Cluster));
+    if (!clusters) return NULL;
+
+    
+    for (int i = 0; i < num_clusters; ++i) {
+        clusters[i].points = NULL;
+        clusters[i].count = 0;
+        clusters[i].capacity = 0;
+        clusters[i].total_load = 0.0;
+    }
+    
+    size_t *counts = calloc(num_clusters, sizeof(size_t));
+    if (!counts) {
+        free(clusters);
+        return NULL;
+    }
+
+    for (size_t i = 0; i < total_points; ++i) {
+        int cid = assignments[i];
+        if (cid >= 0 && cid < num_clusters) {
+            counts[cid]++;
+        }
+    }
+    
+    for (int i = 0; i < num_clusters; ++i) {
+        if (counts[i] > 0) {
+            clusters[i].points = malloc(counts[i] * sizeof(ClusterPoint));
+            if (!clusters[i].points) {
+                
+                for (int j = 0; j < i; ++j) free(clusters[j].points);
+                free(counts);
+                free(clusters);
+                return NULL;
+            }
+            clusters[i].capacity = counts[i];
+            clusters[i].count = 0; 
+        }
+    }
+
+    size_t *offsets = calloc(num_clusters, sizeof(size_t));
+    if (!offsets) {
+        for (int i = 0; i < num_clusters; ++i) free(clusters[i].points);
+        free(counts);
+        free(clusters);
+        return NULL;
+    }
+
+    for (size_t i = 0; i < total_points; ++i) {
+        int cid = assignments[i];
+        if (cid >= 0 && cid < num_clusters) {
+            size_t pos = offsets[cid];
+            memcpy(&clusters[cid].points[pos], &points[i], sizeof(ClusterPoint)); 
+            
+            clusters[cid].total_load += points[i].load;
+            clusters[cid].count++;
+            offsets[cid]++;
+        }
+    }
+
+    free(counts);
+    free(offsets);
+
+    return clusters;
+}
+
 void free_clusters(Cluster *clusters, size_t num_clusters) {
     if (clusters) {
         for (size_t i = 0; i < num_clusters; ++i) {

@@ -159,12 +159,15 @@ int main(int argc, char **argv) {
         double t_clusters_start = MPI_Wtime();
 
         PointWithLoad *all_points = load_points_csv(args.dataset_path, &total_points);
-        Cluster *clusters = build_clusters_from_assignments(all_assignments, total_assign,
-                                                            all_points, total_points,
-                                                            args.num_clusters);
+        Cluster *clusters = build_clusters_optimized(all_assignments, total_points,
+                                                     all_points, args.num_clusters);
         free(all_points);
         free(all_assignments);
         free(recv_counts);
+
+        if (!clusters) {
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+        }
 
         metrics.time_cluster = MPI_Wtime() - t_clusters_start;
 

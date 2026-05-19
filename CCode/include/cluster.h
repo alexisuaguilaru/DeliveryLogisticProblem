@@ -34,6 +34,9 @@ Cluster *build_clusters_from_assignments(
     size_t num_clusters
 );
 
+Cluster* build_clusters_optimized(const int *assignments, size_t total_points, 
+                                  const PointWithLoad *points, int num_clusters);
+
 void free_clusters(
     Cluster *clusters, 
     size_t num_clusters
