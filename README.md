@@ -3,6 +3,7 @@
 ---
 ## Table of Contents <!-- omit in toc -->
 - [Abstract](#abstract)
+- [Author, Affiliation and Contact](#author-affiliation-and-contact)
 - [General Aim](#general-aim)
 - [Context](#context)
 - [Problem](#problem)
@@ -13,12 +14,18 @@
 - [Installation and Usage](#installation-and-usage)
 - [Experiments](#experiments)
 - [Analysis of Results](#analysis-of-results)
-- [Author, Affiliation and Contact](#author-affiliation-and-contact)
 - [License](#license)
 - [References](#references)
 
 ---
 ## Abstract
+This repository presents a parallelized implementation of an objective function designed to evaluate cluster balance within the context of the Delivery Logistics Problem. Leveraging parallel processing via Intel MPI and C, the core objective function computes geometric allocations based on the Haversine metric and evaluates cost variances across generated clusters. Performance testing was carried out on a self-hosted AWS cluster under an experimental design with a dataset of 42,543 coordinates. The results demonstrate a scalability bottleneck where increasing processing nodes beyond two threads yields negligible execution-time benefits. This behavior is analyzed through algorithmic complexity, revealing that the primary cluster-assignment operations scale linearly ($O(n)$) and remain computationally inexpensive due to the low cardinality of the centroid sets ($k << n$), which practically shifts the execution constraints from processing capacity to communication overhead.
+
+---
+## Author, Affiliation and Contact
+Alexis Aguilar [Student of Bachelor's Degree in "Tecnologías para la Información en Ciencias" at Universidad Nacional Autónoma de México [UNAM](https://www.unam.mx/)]: alexis.uaguilaru@gmail.com
+
+Project developed for the subjects "High-Performance Computing (HPC)" and "Evolutionary Computation" taught in semestre 2026-2.
 
 ---
 ## General Aim
@@ -99,12 +106,6 @@ Following the [Experimental Design](#experimental-design), the following results
 From the experiments, it can be observed that adding more processing threads (or nodes to the cluster) does not yield a real benefit in terms of increasing the execution speed of the objective function, with the real performance limit being achieved with two processing threads (based on the size of test dataset).
 
 These were not the expected results, but this behavior occurs because the primary operations of the objective function (assigning points to their respective clusters and calculating the cost of each cluster) are not computationally expensive, as all of them are equivalent to a linear time $O(n)$ proportional to the number of points $|Q|$ in a general sense. The number of centroids is not considered in the complexity because it tends to be a significantly lower quantity ($k << n$), causing it to behave more like a constant than another variable within the algorithm.
-
----
-## Author, Affiliation and Contact
-Alexis Aguilar [Student of Bachelor's Degree in "Tecnologías para la Información en Ciencias" at Universidad Nacional Autónoma de México [UNAM](https://www.unam.mx/)]: alexis.uaguilaru@gmail.com
-
-Project developed for the subjects "High-Performance Computing (HPC)" and "Evolutionary Computation" taught in semestre 2026-2.
 
 ---
 ## License
