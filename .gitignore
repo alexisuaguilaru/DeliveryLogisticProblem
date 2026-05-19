@@ -7,4 +7,9 @@ __pycache__
 results/*
 __**/
 *.o
+_*.c
 LogisticDelivery
+
+config.env
+Experiments.json
+ActualExperiments.json

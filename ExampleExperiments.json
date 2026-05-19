@@ -1,0 +1,9 @@
+{
+    "EXPERIMENTS": 10,
+    "NODES": [1,2,3],
+    "DATASET": ["data/points.csv"],
+    "SOLUTION": ["data/solution.csv"],
+    "NUM_CLUSTERS": [4],
+    "MAX_LOAD": [144000],
+    "PENALIZATION": [1]
+}
