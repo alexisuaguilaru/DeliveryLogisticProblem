@@ -47,35 +47,58 @@ flowchart TD
     Start(Input: Individual)
     AssignDistribution@{ shape: processes, label: "Distribute centroids assignation over nodes" }
     Assign[Assign points to their closer centroid]
-    EvalClusterDistribution@{ shape: processes, label: "Distribute clusters evaluation over nodes" }
     EvalClusters[Calculate deliver times in every formed cluster]
-    CalcFitness[Calculate the standard deviation of the deliver times in each cluster]
+    CalcFitness[Calculate the standard deviation of the deliver times over the clusters]
     End(Output: Std of deliver times)
     
     InitFunction .-> Start
     Start --> AssignDistribution
     AssignDistribution --> Assign
-    Assign --> EvalClusterDistribution
-    EvalClusterDistribution --> EvalClusters
+    Assign --> EvalClusters
     EvalClusters --> CalcFitness
     CalcFitness --> End
 ```
 
 ### Technologies and Tools
-- C/C++
+- C
 - Intel MPI
 - Python
 
 ### Experimental Design
+The compiled code was executed 100 times using a solution of 480 centroids (latitude and longitude points) and a test dataset of 42,543 points, evaluating the objective function across 1 to 8 parallel processing threads.
+
+The experiments were conducted on a self-hosted cluster of 8 AWS t3.micro instances, utilizing a Network File System (NFS) to share the datasets across nodes.
 
 ---
 ## Installation and Usage
+To use the proposed code, follow these instructions:
+1. Clone the repository:
+```bash
+git clone https://github.com/alexisuaguilaru/DeliveryLogisticProblem.git
+```
+2. Compile the source code:
+```bash
+make 
+```
+3. Execute the code using the following signature:
+```bash
+mpiexec.hydra -n <NODES> ./LogisticDelivery -i <POINTS_DATASET> -s <SOLUTION_FILE> -o <RESULTS_FILE> -k <NUM_CLUSTERS> -l <MAX_LOAD> -p <PENALIZATION>
+
+mpiexec.hydra -n 4 ./LogisticDelivery -i data/points.csv -s data/solution.csv -o  results -k 4 -l 144000 -p 1
+```
 
 ---
 ## Experiments
+Following the [Experimental Design](#experimental-design), the following results were obtained, gathering the real, user, and system time metrics, as well as the CPU/Wall ratio from the experimental runs:
+![](./Resources/PerformancePerfile_Real.png)
+![](./Resources/PerformancePerfile_UserSys.png)
+![](./Resources/PercentageCPU.png)
 
 ---
 ## Analysis of Results
+From the experiments, it can be observed that adding more processing threads (or nodes to the cluster) does not yield a real benefit in terms of increasing the execution speed of the objective function, with the real performance limit being achieved with two processing threads (based on the size of test dataset).
+
+These were not the expected results, but this behavior occurs because the primary operations of the objective function (assigning points to their respective clusters and calculating the cost of each cluster) are not computationally expensive, as all of them are equivalent to a linear time $O(n)$ proportional to the number of points $|Q|$ in a general sense. The number of centroids is not considered in the complexity because it tends to be a significantly lower quantity ($k << n$), causing it to behave more like a constant than another variable within the algorithm.
 
 ---
 ## Author, Affiliation and Contact
