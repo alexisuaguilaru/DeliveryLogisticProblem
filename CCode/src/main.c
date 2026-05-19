@@ -14,6 +14,7 @@
 #include "results.h"
 #include "distance.h"
 #include "timing.h"
+#include "utils.h"
 
 static void print_usage(const char *prog) {
     fprintf(stderr, "Help: %s -i <dataset> -s <solution> -o <results> [options]\n", prog);
@@ -65,7 +66,7 @@ static int parse_args(int argc, char **argv, ProgramArgs *args) {
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
-    
+
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -78,156 +79,129 @@ int main(int argc, char **argv) {
     double utime_start, stime_start, wtime_start;
     double utime_end, stime_end, wtime_end;
 
-    MPI_Datatype MPI_PWL;
-    {
-        int blocklens[3] = {1, 1, 1};
-        MPI_Aint offsets[3] = {
-            offsetof(PointWithLoad, point.lon),
-            offsetof(PointWithLoad, point.lat),
-            offsetof(PointWithLoad, load)
-        };
-        MPI_Datatype types[3] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
-        MPI_Type_create_struct(3, blocklens, offsets, types, &MPI_PWL);
-        MPI_Type_commit(&MPI_PWL);
-    }
-
-    PointWithLoad *all_points = NULL;
-    size_t total_points = 0;
-    int *counts = NULL, *displs = NULL;
-    PointWithLoad *local_points = NULL;
-    int *local_assignments = NULL;
-    int *all_assignments = NULL;
-    double *centroid_coords = NULL;
-    CentroidSet local_centroids = {0};
-    Cluster *clusters = NULL;
-    double *cluster_costs = NULL;
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    uswtime(&utime_start, &stime_start, &wtime_start);
     double t_total_start = MPI_Wtime();
+    uswtime(&utime_start, &stime_start, &wtime_start);
 
-    double t_part_start = MPI_Wtime();
+    size_t total_points = 0;
     if (rank == 0) {
-        all_points = load_points_csv(args.dataset_path, &total_points);
-        if (!all_points) { fprintf(stderr, "Error dataset\n"); MPI_Abort(MPI_COMM_WORLD, 1); }
-
-        CentroidSet *temp_c = load_centroids_csv(args.solution_path, args.num_clusters);
-        if (!temp_c) { fprintf(stderr, "Error centroids\n"); MPI_Abort(MPI_COMM_WORLD, 2); }
-
-        centroid_coords = malloc(args.num_clusters * 2 * sizeof(double));
-        for (int i = 0; i < args.num_clusters; ++i) {
-            centroid_coords[2*i]   = temp_c->centroids[i].lon;
-            centroid_coords[2*i+1] = temp_c->centroids[i].lat;
+        total_points = count_csv_lines(args.dataset_path);
+    }
+    if (rank == 0) {
+        for (int p = 1; p < size; ++p) {
+            MPI_Send(&total_points, 1, MPI_UNSIGNED_LONG_LONG, p, 0, MPI_COMM_WORLD);
         }
-        free_centroids(temp_c);
+    } else {
+        MPI_Recv(&total_points, 1, MPI_UNSIGNED_LONG_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
 
-        counts = malloc(size * sizeof(int));
-        displs = malloc(size * sizeof(int));
-        size_t base = total_points / size;
-        size_t rem = total_points % size;
-        displs[0] = 0;
-        for (int i = 0; i < size; ++i) {
-            counts[i] = (int)(base + (i < (int)rem ? 1 : 0));
-            if (i > 0) displs[i] = displs[i-1] + counts[i-1];
+    size_t local_start, local_count;
+    compute_local_range(total_points, rank, size, &local_start, &local_start);
+    compute_local_range(total_points, rank, size, &local_start, &local_count);
+
+    PointWithLoad *local_points = NULL;
+    if (local_count > 0) {
+        local_points = malloc(local_count * sizeof(PointWithLoad));
+        if (!local_points) MPI_Abort(MPI_COMM_WORLD, 1);
+
+        FILE *f = fopen(args.dataset_path, "r");
+        if (!f) MPI_Abort(MPI_COMM_WORLD, 2);
+
+        char line[LINE_BUFFER_SIZE];
+        size_t idx = 0, current = 0;
+        while (fgets(line, sizeof(line), f) && idx < local_start + local_count) {
+            if (trim_whitespace(line)[0] == '\0') continue;
+            if (idx >= local_start) {
+                double values[3];
+                if (parse_csv_line_double(line, values, 3) == 3) {
+                    local_points[current].point.lon = values[0];
+                    local_points[current].point.lat = values[1];
+                    local_points[current].load = values[2];
+                    current++;
+                }
+            }
+            idx++;
         }
+        fclose(f);
     }
 
-    if (rank == 0) metrics.time_partition = MPI_Wtime()-t_part_start;
-
-    double params[3] = {(double)args.num_clusters, args.max_load, (double)args.penalization};
-    MPI_Bcast(params, 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    int num_clusters = (int)params[0];
-    double max_load = params[1];
-    bool penalization = (bool)params[2];
-
-    MPI_Bcast(&total_points, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
-
-    if (rank != 0) {
-        counts = malloc(size * sizeof(int));
-        displs = malloc(size * sizeof(int));
-    }
-    MPI_Bcast(counts, size, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(displs, size, MPI_INT, 0, MPI_COMM_WORLD);
-
-    int local_count = counts[rank];
-    local_points = malloc(local_count * sizeof(PointWithLoad));
-    if (!local_points) MPI_Abort(MPI_COMM_WORLD, 3);
-
-    if (rank != 0) centroid_coords = malloc(num_clusters * 2 * sizeof(double));
-    MPI_Bcast(centroid_coords, num_clusters * 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    MPI_Scatterv(all_points, counts, displs, MPI_PWL,
-                 local_points, local_count, MPI_PWL, 0, MPI_COMM_WORLD);
-
-    local_centroids.centroids = malloc(num_clusters * sizeof(Point));
-    local_centroids.num_centroids = num_clusters;
-    for (int i = 0; i < num_clusters; ++i) {
-        local_centroids.centroids[i].lon = centroid_coords[2*i];
-        local_centroids.centroids[i].lat = centroid_coords[2*i+1];
-    }
-    free(centroid_coords);
-
+    CentroidSet *temp_c = load_centroids_csv(args.solution_path, args.num_clusters);
+    if (!temp_c) MPI_Abort(MPI_COMM_WORLD, 3);
+    
     double t_assign_start = MPI_Wtime();
-    local_assignments = assign_centroids_to_points(&local_centroids, local_points, local_count);
+    int *local_assignments = assign_centroids_to_points(temp_c, local_points, local_count);
     if (!local_assignments) MPI_Abort(MPI_COMM_WORLD, 4);
     double t_assign_end = MPI_Wtime();
     metrics.time_assign = t_assign_end - t_assign_start;
 
+    free_centroids(temp_c);
+    free(local_points); 
+    
     if (rank == 0) {
-        all_assignments = malloc(total_points * sizeof(int));
-        if (!all_assignments) MPI_Abort(MPI_COMM_WORLD, 5);
-    }
-
-    MPI_Gatherv(local_assignments, local_count, MPI_INT,
-                all_assignments, counts, displs, MPI_INT, 0, MPI_COMM_WORLD);
-
-    free(local_points);
-    free(local_assignments);
-    free(local_centroids.centroids);
-    free(counts);
-    free(displs);
-
-    double t_clusters_start = MPI_Wtime();
-    if (rank == 0) {
-        clusters = build_clusters_from_assignments(all_assignments, total_points, 
-                                                   all_points, total_points, num_clusters);
         
-        free(all_points);
-        free(all_assignments);
-
-        metrics.time_cluster = MPI_Wtime() - t_clusters_start;
-        double t_cost_start = MPI_Wtime();
-
-        cluster_costs = malloc(num_clusters * sizeof(double));
-        for (int i = 0; i < num_clusters; ++i) {
-            cluster_costs[i] = calculate_cluster_cost(&clusters[i], DEFAULT_VELOCITY_KMH);
+        int *recv_counts = calloc(size, sizeof(int));
+        recv_counts[0] = (int)local_count;
+        for (int p = 1; p < size; ++p) {
+            MPI_Recv(&recv_counts[p], 1, MPI_INT, p, p, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        
+        int total_assign = 0;
+        for (int p = 0; p < size; ++p) total_assign += recv_counts[p];
+        int *all_assignments = malloc(total_assign * sizeof(int));
+        memcpy(all_assignments, local_assignments, local_count * sizeof(int));
+        
+        int offset = (int)local_count;
+        for (int p = 1; p < size; ++p) {
+            MPI_Recv(all_assignments + offset, recv_counts[p], MPI_INT,
+                     p, p + 10000, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            offset += recv_counts[p];
         }
 
+        double t_clusters_start = MPI_Wtime();
+
+        PointWithLoad *all_points = load_points_csv(args.dataset_path, &total_points);
+        Cluster *clusters = build_clusters_from_assignments(all_assignments, total_assign,
+                                                            all_points, total_points,
+                                                            args.num_clusters);
+        free(all_points);
+        free(all_assignments);
+        free(recv_counts);
+
+        metrics.time_cluster = MPI_Wtime() - t_clusters_start;
+
+        double t_cost_start = MPI_Wtime();
+        double *cluster_costs = malloc(args.num_clusters * sizeof(double));
+        for (int i = 0; i < args.num_clusters; ++i) {
+            cluster_costs[i] = calculate_cluster_cost(&clusters[i], DEFAULT_VELOCITY_KMH);
+        }
         metrics.time_cost = MPI_Wtime() - t_cost_start;
 
-        double fitness = objective_function(cluster_costs, num_clusters, 
-                                            max_load, total_points, penalization);
-        
+        double fitness = objective_function(cluster_costs, args.num_clusters,
+                                           args.max_load, total_points, args.penalization);
+
         uswtime(&utime_end, &stime_end, &wtime_end);
         double t_total_end = MPI_Wtime();
-        
+
         metrics.fitness = fitness;
         metrics.time_total = t_total_end - t_total_start;
-        metrics.time_assign = t_assign_end - t_assign_start;
-        metrics.real_time = wtime_end-wtime_start;
-        metrics.user_time = utime_end-utime_start;
-        metrics.sys_time = stime_end-stime_start;
-        metrics.cpu_wall = 100*((metrics.user_time+metrics.sys_time)/metrics.real_time);
-        
-        dump_clusters_results(clusters, num_clusters, cluster_costs, args.results_name);
+        metrics.real_time = wtime_end - wtime_start;
+        metrics.user_time = utime_end - utime_start;
+        metrics.sys_time = stime_end - stime_start;
+        metrics.cpu_wall = 100.0 * ((metrics.user_time + metrics.sys_time) / metrics.real_time);
+
+        dump_clusters_results(clusters, args.num_clusters, cluster_costs, args.results_name);
         dump_info_results(&metrics, args.results_name);
 
         free(cluster_costs);
-        free_clusters(clusters, num_clusters);
+        free_clusters(clusters, args.num_clusters);
+        free(local_assignments);
+
+    } else {
+        int local_cnt = (int)local_count;
+        MPI_Send(&local_cnt, 1, MPI_INT, 0, rank, MPI_COMM_WORLD);
+        MPI_Send(local_assignments, local_cnt, MPI_INT, 0, rank + 10000, MPI_COMM_WORLD);
+        free(local_assignments);
     }
 
-    MPI_Type_free(&MPI_PWL);
     MPI_Finalize();
     return EXIT_SUCCESS;
 }

@@ -19,4 +19,7 @@ int parse_csv_line_double(
     size_t max_values
 );
 
+void compute_local_range(size_t total_elements, int rank, int size, 
+                         size_t *start_out, size_t *count_out);
+
 #endif

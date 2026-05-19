@@ -25,3 +25,11 @@ int parse_csv_line_double(char *line, double *values, size_t max_values) {
     }
     return count;
 }
+
+void compute_local_range(size_t total, int rank, int size,
+                                size_t *local_start, size_t *local_count) {
+    size_t base = total / size;
+    size_t rem = total % size;
+    *local_count = base + (rank < (int)rem ? 1 : 0);
+    *local_start = rank * base + (rank < (int)rem ? rank : (int)rem);
+}
