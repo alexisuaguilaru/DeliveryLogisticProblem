@@ -55,7 +55,7 @@ if __name__ == '__main__':
         parameters = dict(parameters)
         NumNodes = parameters['NODES']
         for run_id in range(1,NumberExperiments+1):
-            parameters['OUTPUT_FILE'] = f'Nodes{NumNodes:03}/Run_{experiment_id:04}'
+            parameters['OUTPUT_FILE'] = f'Nodes{NumNodes:03}/Run_{run_id:04}'
             WriteParametersToConfigFile(run_id,parameters)
             print(f'### START: RUN {run_id:03} ###')
             if RunExperiment():
