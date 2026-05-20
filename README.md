@@ -19,7 +19,7 @@
 
 ---
 ## Abstract
-This repository presents a parallelized implementation of an objective function designed to evaluate cluster balance within the context of the Delivery Logistics Problem. Leveraging parallel processing via Intel MPI and C, the core objective function computes geometric allocations based on the Haversine metric and evaluates cost variances across generated clusters. Performance testing was carried out on a self-hosted AWS cluster under an experimental design with a dataset of 42,543 coordinates. The results demonstrate a scalability bottleneck where increasing processing nodes beyond two threads yields negligible execution-time benefits. This behavior is analyzed through algorithmic complexity, revealing that the primary cluster-assignment operations scale linearly ($O(n)$) and remain computationally inexpensive due to the low cardinality of the centroid sets ($k << n$), which practically shifts the execution constraints from processing capacity to communication overhead.
+This repository presents a parallelized implementation of an objective function designed to evaluate cluster balance within the context of the Delivery Logistics Problem. Leveraging parallel processing via Intel MPI and C, the core objective function computes geometric allocations based on the Haversine metric and evaluates cost variances across generated clusters. Performance testing was carried out on a self-hosted cluster of 8 AWS t3.micro instances using a Network File System (NFS) under an experimental design with a dataset of 42,543 coordinates, showing that the system successfully accelerates iteration times for large solution populations. However, experimental performance profiles reveal a scalability bottleneck where employing more than 7 distributed threads yields negligible returns.
 
 ---
 ## Author, Affiliation and Contact
@@ -76,6 +76,8 @@ The compiled code was executed 100 times using a solution of 480 centroids (lati
 
 The experiments were conducted on a self-hosted cluster of 8 AWS t3.micro instances, utilizing a Network File System (NFS) to share the datasets across nodes.
 
+To determine the real, user, and system times of the execution across the different experiments, timers were placed at critical parts of the code after the data was loaded into RAM. Specifically, a timestamp was recorded immediately after data loading and another after evaluating the objective function based on the costs of each cluster.
+
 ---
 ## Installation and Usage
 To use the proposed code, follow these instructions:
@@ -103,9 +105,7 @@ Following the [Experimental Design](#experimental-design), the following results
 
 ---
 ## Analysis of Results
-From the experiments, it can be observed that adding more processing threads (or nodes to the cluster) does not yield a real benefit in terms of increasing the execution speed of the objective function, with the real performance limit being achieved with two processing threads (based on the size of test dataset).
-
-These were not the expected results, but this behavior occurs because the primary operations of the objective function (assigning points to their respective clusters and calculating the cost of each cluster) are not computationally expensive, as all of them are equivalent to a linear time $O(n)$ proportional to the number of points $|Q|$ in a general sense. The number of centroids is not considered in the complexity because it tends to be a significantly lower quantity ($k << n$), causing it to behave more like a constant than another variable within the algorithm.
+From the experiments, it can be observed that employing more than 7 distributed processing threads does not yield a significant reduction in execution time. Based on the plots, it can be determined that the objective function benefits from parallelization, thereby reducing the execution time of the iterations when handling a large population of solutions.
 
 ---
 ## License
