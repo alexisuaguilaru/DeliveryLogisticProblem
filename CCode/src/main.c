@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
     double utime_end, stime_end, wtime_end;
 
     double t_total_start = MPI_Wtime();
-    uswtime(&utime_start, &stime_start, &wtime_start);
 
     size_t total_points = 0;
     if (rank == 0) {
@@ -93,6 +92,16 @@ int main(int argc, char **argv) {
     } else {
         MPI_Recv(&total_points, 1, MPI_UNSIGNED_LONG_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
+
+    PointWithLoad *all_points = NULL;
+    if (rank == 0) {
+        all_points = load_points_csv(args.dataset_path, &total_points);
+    }
+
+    CentroidSet *temp_c = load_centroids_csv(args.solution_path, args.num_clusters);
+    if (!temp_c) MPI_Abort(MPI_COMM_WORLD, 3);
+
+    uswtime(&utime_start, &stime_start, &wtime_start);
 
     size_t local_start, local_count;
     compute_local_range(total_points, rank, size, &local_start, &local_start);
@@ -123,9 +132,6 @@ int main(int argc, char **argv) {
         }
         fclose(f);
     }
-
-    CentroidSet *temp_c = load_centroids_csv(args.solution_path, args.num_clusters);
-    if (!temp_c) MPI_Abort(MPI_COMM_WORLD, 3);
     
     double t_assign_start = MPI_Wtime();
     int *local_assignments = assign_centroids_to_points(temp_c, local_points, local_count);
@@ -158,7 +164,6 @@ int main(int argc, char **argv) {
 
         double t_clusters_start = MPI_Wtime();
 
-        PointWithLoad *all_points = load_points_csv(args.dataset_path, &total_points);
         Cluster *clusters = build_clusters_optimized(all_assignments, total_points,
                                                      all_points, args.num_clusters);
         free(all_points);
